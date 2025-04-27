@@ -2,8 +2,12 @@ from flask import Flask
 from flask_pymongo import PyMongo
 from flask_jwt_extended import JWTManager
 from flask_mail import Mail
-from .config import Config
+from app.config import Config
 from app.models import db  # sadece bu olacak
+from app.routes.cart_routes import cart_bp
+from app import mongo
+from app.extensions import db, mongo, jwt, mail  # 🔥 burada çağırdık
+
 
 mongo = PyMongo()
 jwt = JWTManager()
@@ -29,6 +33,7 @@ def create_app():
     app.register_blueprint(product_bp, url_prefix="/products")
     app.register_blueprint(cart_bp, url_prefix="/cart")
     app.register_blueprint(user_bp, url_prefix="/user")
+
 
     # Tabloları oluştur
     with app.app_context():

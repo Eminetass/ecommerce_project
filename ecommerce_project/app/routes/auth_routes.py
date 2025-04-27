@@ -43,7 +43,8 @@ def login():
     if not user or not user.check_password(password):
         return jsonify({"msg": "Hatalı giriş."}), 401
 
-    access_token = create_access_token(identity={"id": user.id, "role": user.role})
+    access_token = create_access_token(identity=str(user.id)) 
+
     return jsonify(access_token=access_token), 200
 
 reset_tokens = {}  # Basit token kaydı (ileride Redis gibi sistemler önerilir)
