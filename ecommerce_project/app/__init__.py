@@ -1,11 +1,10 @@
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
 from flask_pymongo import PyMongo
 from flask_jwt_extended import JWTManager
 from flask_mail import Mail
 from .config import Config
+from app.models import db  # sadece bu olacak
 
-db = SQLAlchemy()
 mongo = PyMongo()
 jwt = JWTManager()
 mail = Mail()
@@ -30,5 +29,10 @@ def create_app():
     app.register_blueprint(product_bp, url_prefix="/products")
     app.register_blueprint(cart_bp, url_prefix="/cart")
     app.register_blueprint(user_bp, url_prefix="/user")
+
+    # Tabloları oluştur
+    with app.app_context():
+        from app.models import user, product, cart  # modeller import edilmeli ki create_all çalışsın
+        db.create_all()
 
     return app
