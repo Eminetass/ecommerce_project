@@ -5,8 +5,10 @@ from flask_mail import Mail
 from app.config import Config
 from app.models import db  # sadece bu olacak
 from app.routes.cart_routes import cart_bp
-from app import mongo
 from app.extensions import db, mongo, jwt, mail  # 🔥 burada çağırdık
+from app.routes.product_routes import product_bp
+from app.routes.user_routes import user_bp
+
 
 
 mongo = PyMongo()

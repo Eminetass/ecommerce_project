@@ -5,7 +5,7 @@ from app.models.user import User
 
 user_bp = Blueprint('user', __name__)
 
-@user_bp.route('/update', methods=['PUT'])
+@user_bp.route('/profile', methods=['PUT'])
 @jwt_required()
 def update_profile():
     identity = get_jwt_identity()
