@@ -2,7 +2,13 @@ from flask_mail import Message
 from app import mail
 from flask import current_app
 
+
 def send_reset_email(to, token):
+    print(f"Sender Email: {current_app.config['MAIL_USERNAME']}")
+    print(f"Sender Type: {type(current_app.config['MAIL_USERNAME'])}")
+
+
+    print(f"Gelen email (send_reset_email): {to}")
     msg = Message(
         subject="Şifre Sıfırlama",
         sender=current_app.config["MAIL_USERNAME"],
@@ -15,6 +21,10 @@ def send_reset_email(to, token):
 
 
 def send_cart_update_email(to):
+    print(f"Sender Email: {current_app.config['MAIL_USERNAME']}")
+    print(f"Sender Type: {type(current_app.config['MAIL_USERNAME'])}")
+
+    print(f"Gelen email (send_cart_update_email): {to}")
     msg = Message(
         subject="Sepetiniz Güncellendi",
         sender=current_app.config["MAIL_USERNAME"],

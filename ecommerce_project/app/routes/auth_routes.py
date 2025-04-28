@@ -63,6 +63,8 @@ def reset_password_request():
     reset_tokens[token] = user.id
 
     send_reset_email(user.email, token)
+    print(f"Şifre sıfırlama tokenı: {token}")
+
 
     return jsonify({"msg": "Şifre sıfırlama bağlantısı gönderildi."}), 200
 
