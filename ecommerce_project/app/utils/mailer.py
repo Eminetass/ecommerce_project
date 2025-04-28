@@ -12,3 +12,14 @@ def send_reset_email(to, token):
     msg.body = f"Şifrenizi sıfırlamak için bağlantıya tıklayın: {reset_link}"
 
     mail.send(msg)
+
+
+def send_cart_update_email(to):
+    msg = Message(
+        subject="Sepetiniz Güncellendi",
+        sender=current_app.config["MAIL_USERNAME"],
+        recipients=[to],
+    )
+    msg.body = "Sepetinize yeni bir ürün eklendi! Alışverişinize devam etmek için sitemizi ziyaret edin."
+    mail.send(msg)
+

@@ -11,7 +11,8 @@ cart_bp = Blueprint('cart_bp', __name__)
 @jwt_required()
 def add_to_cart():
     data = request.get_json()
-    user_id = get_jwt_identity()
+    identity = get_jwt_identity()
+    user_id = identity["id"]
 
     new_cart_item = {
         "user_id": user_id,
@@ -22,9 +23,16 @@ def add_to_cart():
         "status": "active"
     }
 
-
     mongo.db.cart.insert_one(new_cart_item)
-    return jsonify({"message": "Ürün sepete eklendi!"}), 201
+
+    # Email gönder
+    from app.models.user import User
+    user = User.query.get(user_id)
+    from app.utils.mailer import send_cart_update_email
+    send_cart_update_email(user.email)
+
+    return jsonify({"message": "Ürün sepete eklendi ve e-posta gönderildi!"}), 201
+
 
 # Sepeti görüntüleme
 @cart_bp.route('/my-cart', methods=['GET'])
