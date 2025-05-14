@@ -32,4 +32,3 @@ def send_cart_update_email(to):
     )
     msg.body = "Sepetinize yeni bir ürün eklendi! Alışverişinize devam etmek için sitemizi ziyaret edin."
     mail.send(msg)
-

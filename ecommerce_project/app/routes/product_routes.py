@@ -92,4 +92,3 @@ def list_products():
             "supplier_id": product.supplier_id
         })
     return jsonify(result), 200
-
