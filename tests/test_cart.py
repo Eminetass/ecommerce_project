@@ -1,51 +1,47 @@
-from app import create_app
-from ecommerce_project.app.models.mongo_cart import MongoCart
+import pytest
+from app.models.mongo_cart import MongoCart
+from app.extensions import mongo
 
-# Flask uygulamasını oluştur
-app = create_app()
+def test_mongo_cart_creation():
+    cart = MongoCart()
+    assert cart is not None
 
-def test_cart_operations():
-    with app.app_context():
-        try:
-            # Test kullanıcısı için örnek ürün
-            test_product = {
-                "id": 1,
-                "name": "Test Ürün",
-                "price": 99.99,
-                "quantity": 2
-            }
-            
-            # Sepete ürün ekle
-            print("Sepete ürün ekleniyor...")
-            result = MongoCart.add_item(user_id=1, product_data=test_product)
-            print(f"Ürün eklendi. ID: {result.inserted_id}")
-            
-            # Sepeti görüntüle
-            print("\nSepet içeriği getiriliyor...")
-            cart_items = MongoCart.get_user_cart(user_id=1)
-            for item in cart_items:
-                print(f"Ürün: {item['name']}, Miktar: {item['quantity']}, Fiyat: {item['price']}")
-            
-            # Ürün miktarını güncelle
-            print("\nÜrün miktarı güncelleniyor...")
-            MongoCart.update_quantity(str(result.inserted_id), quantity=3)
-            print("Miktar güncellendi.")
-            
-            # Güncellenmiş sepeti görüntüle
-            print("\nGüncellenmiş sepet içeriği:")
-            cart_items = MongoCart.get_user_cart(user_id=1)
-            for item in cart_items:
-                print(f"Ürün: {item['name']}, Miktar: {item['quantity']}, Fiyat: {item['price']}")
-            
-            # Ürünü sepetten kaldır
-            print("\nÜrün sepetten kaldırılıyor...")
-            MongoCart.remove_item(str(result.inserted_id))
-            print("Ürün kaldırıldı.")
-            
-            print("\nTest başarıyla tamamlandı!")
-            
-        except Exception as e:
-            print(f"Hata oluştu: {e}")
+def test_add_item_to_cart():
+    cart = MongoCart()
+    product_data = {
+        'product_id': '1',
+        'name': 'Test Product',
+        'quantity': 2,
+        'price': 10.99
+    }
+    result = cart.add_item(product_data=product_data)
+    assert result is True
 
-if __name__ == "__main__":
-    test_cart_operations() 
+def test_get_cart_items():
+    cart = MongoCart()
+    items = cart.get_user_cart(user_id=1)
+    assert isinstance(items, list)
+
+def test_update_cart_item():
+    cart = MongoCart()
+    product_data = {
+        'product_id': '1',
+        'name': 'Test Product',
+        'quantity': 3,
+        'price': 10.99
+    }
+    cart.add_item(product_data=product_data)
+    update_result = cart.update_quantity(item_id='1', quantity=4)
+    assert update_result is True
+
+def test_remove_cart_item():
+    cart = MongoCart()
+    product_data = {
+        'product_id': '1',
+        'name': 'Test Product',
+        'quantity': 2,
+        'price': 10.99
+    }
+    cart.add_item(product_data=product_data)
+    remove_result = cart.remove_item(item_id='1')
+    assert remove_result is True 
