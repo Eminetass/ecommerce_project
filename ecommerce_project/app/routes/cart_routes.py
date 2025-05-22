@@ -1,61 +1,56 @@
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from app.extensions import mongo 
+from app.models.mongo_cart import MongoCart
+from app.models.product import Product
+from app.utils.mailer import send_cart_update_email
 
+cart_bp = Blueprint('cart', __name__)
 
-
-cart_bp = Blueprint('cart_bp', __name__)
-
-# Sepete ürün ekleme
 @cart_bp.route('/add', methods=['POST'])
 @jwt_required()
 def add_to_cart():
+    current_user = get_jwt_identity()
     data = request.get_json()
-    identity = get_jwt_identity()
-    user_id = identity["id"]
+    product_id = data.get('product_id')
+    quantity = data.get('quantity', 1)
 
-    new_cart_item = {
-        "user_id": user_id,
-        "product_id": data["product_id"],
-        "product_name": data["product_name"],
-        "price": data["price"],
-        "quantity": data["quantity"],
-        "status": "active"
+    product = Product.query.get_or_404(product_id)
+    if product.status != 'active':
+        return jsonify({"msg": "Bu ürün artık mevcut değil."}), 400
+
+    product_data = {
+        "id": product.id,
+        "name": product.name,
+        "price": product.price,
+        "quantity": quantity
     }
 
-    mongo.db.cart.insert_one(new_cart_item)
+    MongoCart.add_item(current_user["id"], product_data)
+    send_cart_update_email(current_user["email"], "Sepetiniz Güncellendi", "Sepetinize yeni bir ürün eklendi.")
+    
+    return jsonify({"msg": "Ürün sepete eklendi."}), 201
 
-    # Email gönder
-    from app.models.user import User
-    user = User.query.get(user_id)
-    from app.utils.mailer import send_cart_update_email
-    send_cart_update_email(user.email)
-
-    return jsonify({"message": "Ürün sepete eklendi ve e-posta gönderildi!"}), 201
-
-
-# Sepeti görüntüleme
-@cart_bp.route('/my-cart', methods=['GET'])
+@cart_bp.route('/items', methods=['GET'])
 @jwt_required()
-def get_my_cart():
-       identity = get_jwt_identity()
-       user_id = identity['id']
+def get_cart_items():
+    current_user = get_jwt_identity()
+    cart_items = MongoCart.get_user_cart(current_user["id"])
+    return jsonify(cart_items), 200
 
-       cart_items = list(mongo.db.cart.find({"user_id": user_id}, {'_id': 0}))
-
-       return jsonify(cart_items), 200
-
-
-
-# Sepetten ürün silme
-@cart_bp.route('/remove/<product_id>', methods=['DELETE'])
+@cart_bp.route('/update/<item_id>', methods=['PUT'])
 @jwt_required()
-def remove_from_cart(product_id):
-    identity = get_jwt_identity()
-    user_id = identity['id']
+def update_cart_item(item_id):
+    data = request.get_json()
+    quantity = data.get('quantity')
+    
+    if not quantity or quantity < 1:
+        return jsonify({"msg": "Geçersiz miktar."}), 400
 
-    result = mongo.db.cart.delete_one({"user_id": user_id, "product_id": product_id})
-    if result.deleted_count == 0:
-        return jsonify({"msg": "Ürün bulunamadı."}), 404
+    MongoCart.update_quantity(item_id, quantity)
+    return jsonify({"msg": "Sepet güncellendi."}), 200
 
-    return jsonify({"msg": "Ürün sepetten silindi!"}), 200
+@cart_bp.route('/remove/<item_id>', methods=['DELETE'])
+@jwt_required()
+def remove_from_cart(item_id):
+    MongoCart.remove_item(item_id)
+    return jsonify({"msg": "Ürün sepetten kaldırıldı."}), 200
