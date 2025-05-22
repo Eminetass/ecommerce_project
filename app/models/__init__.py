@@ -1,10 +1,7 @@
-from app.extensions import db
+from flask_sqlalchemy import SQLAlchemy
 
-__all__ = ['db']
+db = SQLAlchemy()
 
-# Import models after db is defined
 from .user import User
 from .product import Product
 from .cart import Cart
-
-__all__ += ['User', 'Product', 'Cart'] 

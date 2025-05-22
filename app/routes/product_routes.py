@@ -5,11 +5,7 @@ from app.extensions import db
 
 product_bp = Blueprint('product', __name__)
 
-@product_bp.route('/list', methods=['GET'])
-def list_products():
-    products = Product.query.filter_by(status='active').all()
-    return jsonify([product.to_dict() for product in products]), 200
-
+# Ürün ekleme
 @product_bp.route('/add', methods=['POST'])
 @jwt_required()
 def add_product():
@@ -18,25 +14,21 @@ def add_product():
         return jsonify({"msg": "Bu işlem için yetkiniz yok."}), 403
 
     data = request.get_json()
-    if not all(key in data for key in ['name', 'price']):
-        return jsonify({"msg": "Eksik bilgi. 'name' ve 'price' zorunludur."}), 400
+    product = Product(
+        name=data['name'],
+        description=data.get('description', ''),
+        price=data['price'],
+        stock=data.get('stock', 0),
+        supplier_id=current_user["id"]
+    )
 
-    try:
-        product = Product(
-            name=data['name'],
-            description=data.get('description', ''),
-            price=float(data['price']),
-            stock=int(data.get('stock', 0)),
-            supplier_id=current_user["id"]
-        )
+    db.session.add(product)
+    db.session.commit()
 
-        db.session.add(product)
-        db.session.commit()
+    return jsonify({"msg": "Ürün başarıyla eklendi.", "id": product.id}), 201
 
-        return jsonify({"msg": "Ürün başarıyla eklendi.", "id": product.id}), 201
-    except (ValueError, TypeError):
-        return jsonify({"msg": "Geçersiz veri formatı. 'price' sayısal ve 'stock' tam sayı olmalıdır."}), 400
 
+# Ürün güncelleme
 @product_bp.route('/update/<int:product_id>', methods=['PUT'])
 @jwt_required()
 def update_product(product_id):
@@ -47,21 +39,16 @@ def update_product(product_id):
         return jsonify({"msg": "Bu işlem için yetkiniz yok."}), 403
 
     data = request.get_json()
-    try:
-        if 'name' in data:
-            product.name = data['name']
-        if 'description' in data:
-            product.description = data['description']
-        if 'price' in data:
-            product.price = float(data['price'])
-        if 'stock' in data:
-            product.stock = int(data['stock'])
+    product.name = data.get('name', product.name)
+    product.description = data.get('description', product.description)
+    product.price = data.get('price', product.price)
+    product.stock = data.get('stock', product.stock)
 
-        db.session.commit()
-        return jsonify({"msg": "Ürün başarıyla güncellendi."}), 200
-    except (ValueError, TypeError):
-        return jsonify({"msg": "Geçersiz veri formatı. 'price' sayısal ve 'stock' tam sayı olmalıdır."}), 400
+    db.session.commit()
+    return jsonify({"msg": "Ürün başarıyla güncellendi."}), 200
 
+
+# Ürün silme
 @product_bp.route('/delete/<int:product_id>', methods=['DELETE'])
 @jwt_required()
 def delete_product(product_id):
@@ -76,6 +63,21 @@ def delete_product(product_id):
 
     return jsonify({"msg": "Ürün başarıyla silindi."}), 200
 
+
+# Ürün listeleme (public)
+@product_bp.route('/list', methods=['GET'])
+def list_products():
+    products = Product.query.filter_by(status='active').all()
+    return jsonify([{
+        'id': p.id,
+        'name': p.name,
+        'description': p.description,
+        'price': p.price,
+        'stock': p.stock,
+        'supplier_id': p.supplier_id
+    } for p in products]), 200
+
+
 @product_bp.route('/supplier/products', methods=['GET'])
 @jwt_required()
 def get_supplier_products():
@@ -84,4 +86,27 @@ def get_supplier_products():
         return jsonify({"msg": "Bu işlem için yetkiniz yok."}), 403
 
     products = Product.query.filter_by(supplier_id=current_user["id"]).all()
-    return jsonify([product.to_dict() for product in products]), 200 
+    return jsonify([{
+        'id': p.id,
+        'name': p.name,
+        'description': p.description,
+        'price': p.price,
+        'stock': p.stock,
+        'status': p.status
+    } for p in products]), 200
+
+
+@product_bp.route('/<int:product_id>', methods=['GET'])
+def get_product(product_id):
+    product = Product.query.get_or_404(product_id)
+    if product.status != 'active':
+        return jsonify({"msg": "Bu ürün artık mevcut değil."}), 404
+
+    return jsonify({
+        'id': product.id,
+        'name': product.name,
+        'description': product.description,
+        'price': product.price,
+        'stock': product.stock,
+        'supplier_id': product.supplier_id
+    }), 200

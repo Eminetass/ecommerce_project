@@ -6,4 +6,4 @@ from flask_mail import Mail
 db = SQLAlchemy()
 mongo = PyMongo()
 jwt = JWTManager()
-mail = Mail()
+mail = Mail() 

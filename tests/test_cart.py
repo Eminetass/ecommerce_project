@@ -1,5 +1,5 @@
 from app import create_app
-from app.models.mongo_cart import MongoCart
+from ecommerce_project.app.models.mongo_cart import MongoCart
 
 # Flask uygulamasını oluştur
 app = create_app()
